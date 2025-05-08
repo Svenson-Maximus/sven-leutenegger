@@ -121,16 +121,134 @@
             border-radius: 8px; border: 1px solid var(--primary-color);
             font-size: 0.9em; box-shadow: 0 0 15px var(--primary-color);
         }
+        
+        /* MODIFIED: Styles for #golRulesDisplay (now a button container) */
         #golRulesDisplay {
             top: 20px; left: 20px;
-            background-color: rgba(26, 16, 53, 0.75); 
-            color: var(--text-color); padding: 15px;
+            background-color: rgba(26, 16, 53, 0.75);
+            padding: 10px; /* Adjusted padding */
             border-radius: 6px; border: 1px solid var(--secondary-color);
-            font-size: 0.85em; max-width: 250px;
-            line-height: 1.5;
+            box-shadow: 0 0 10px rgba(240,0,255,0.2); /* Optional: subtle shadow for the button box */
         }
-        #golRulesDisplay h5 { margin-top: 0; color: var(--secondary-color); }
-        #golRulesDisplay ul { padding-left: 18px; margin-bottom: 0; }
+        /* NEW: Styles for the button inside #golRulesDisplay */
+        #golExplainButton {
+            background-color: var(--primary-color);
+            color: var(--background-color); /* High contrast */
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        #golExplainButton:hover {
+            background-color: var(--link-hover-color);
+            transform: translateY(-1px);
+        }
+
+        /* NEW: Styles for the Explanation Popup */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75); /* Darker overlay for better focus */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; 
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .popup-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .popup-content {
+            background-color: var(--card-bg-color);
+            color: var(--text-color);
+            padding: 25px 30px;
+            border-radius: 10px;
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 5px 30px rgba(0, 240, 255, 0.25);
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            opacity: 0; /* Start content as transparent too */
+        }
+        .popup-overlay.visible .popup-content {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        .popup-content h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.6em;
+        }
+        .popup-content h4 {
+            color: var(--secondary-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .popup-content p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        .popup-content ul {
+            list-style-position: outside;
+            padding-left: 20px; /* Standard padding for lists */
+            margin-bottom: 15px;
+        }
+        .popup-content ul li {
+            margin-bottom: 8px;
+            padding-left: 0; /* Remove previous padding if any conflict */
+        }
+        .popup-content ul li::before { /* Override general li style for popup */
+            content: "•"; 
+            font-family: inherit; /* Use standard bullet */
+            font-weight: bold;
+            display: inline-block; 
+            width: 1em;
+            margin-left: -1.1em; /* Adjust position */
+            color: var(--primary-color);
+            position: static; /* Override absolute positioning */
+            font-size: 1em; /* Adjust bullet size if needed */
+        }
+        .popup-content ul ul { /* Nested list styles */
+            margin-top: 8px;
+            list-style-type: circle; /* Or use custom bullets again */
+        }
+        .popup-content ul ul li::before {
+            content: "◦";
+            color: var(--secondary-color);
+        }
+        .popup-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 2.2em;
+            font-weight: 300;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s ease;
+        }
+        .popup-close-btn:hover {
+            color: var(--primary-color);
+        }
 
 
         .initially-hidden { opacity: 0; }
@@ -141,24 +259,66 @@
             .cv-header .title { font-size: 1.2em; }
             .contact-info { flex-direction: column; align-items: center; gap: 5px; }
             .cv-section h2 { font-size: 1.6em; }
-            #golRulesDisplay { font-size: 0.8em; padding: 10px; max-width: 200px; top:10px; left:10px; }
+            /* Adjust popup and button for mobile */
+            #golRulesDisplay { 
+                font-size: 0.8em; /* Button text will scale with this if em used */
+                padding: 8px; 
+                top:10px; left:10px; 
+            }
+            #golExplainButton {
+                padding: 6px 10px;
+                font-size: 0.85em;
+            }
+            .popup-content {
+                padding: 20px;
+                max-height: 90vh;
+            }
+            .popup-content h3 { font-size: 1.4em; }
+            .popup-content h4 { font-size: 1.1em; }
         }
     </style>
 </head>
 <body>
     <canvas id="conwayCanvas"></canvas>
+    
     <div class="interactive-mode-overlay" id="interactiveModeHelp">
         Click to toggle cells. Hold mouse down to draw. Press <kbd>P</kbd> to Pause/Play (draw when paused). Press <kbd>ESC</kbd> to return to CV.
     </div>
+
+    <!-- MODIFIED: #golRulesDisplay now contains a button -->
     <div class="interactive-mode-overlay" id="golRulesDisplay">
-        <h5>Conway's Game of Life:</h5>
-        <ul>
-            <li>Birth: Dead cell with 3 live neighbors becomes live.</li>
-            <li>Survival: Live cell with 2 or 3 live neighbors stays live.</li>
-            <li>Death: Live cell with &lt;2 (loneliness) or &gt;3 (overpopulation) live neighbors dies.</li>
-        </ul>
+        <button id="golExplainButton">What is this?</button>
     </div>
 
+    <!-- NEW: Popup for Game of Life Explanation -->
+    <div id="golExplanationPopup" class="popup-overlay">
+        <div class="popup-content">
+            <button class="popup-close-btn" id="closeGolPopup" aria-label="Close popup">×</button>
+            <h3>Conway's Game of Life</h3>
+            <p>The captivating cellular animation you're interacting with is <strong>Conway's Game of Life</strong>, a zero-player game designed by British mathematician John Horton Conway in 1970.</p>
+            <p>"Zero-player" means its evolution is determined by its initial state, requiring no further input. It unfolds on a grid of cells, each being either "alive" or "dead".</p>
+            
+            <h4>The Algorithm: How Cells Evolve</h4>
+            <p>At each step, or "generation," the fate of every cell is decided by the state of its eight immediate neighbors (horizontal, vertical, and diagonal) based on these simple rules:</p>
+            <ul>
+                <li>
+                    <strong>Birth:</strong> A <em>dead</em> cell with exactly <strong>three</strong> live neighbors becomes a <em>live</em> cell in the next generation.
+                </li>
+                <li>
+                    <strong>Survival:</strong> A <em>live</em> cell with <strong>two or three</strong> live neighbors <em>survives</em> to the next generation.
+                </li>
+                <li>
+                    <strong>Death:</strong> A <em>live</em> cell dies (becomes <em>dead</em>) if it has:
+                    <ul>
+                        <li>Fewer than two live neighbors (<em>underpopulation/loneliness</em>).</li>
+                        <li>More than three live neighbors (<em>overpopulation</em>).</li>
+                    </ul>
+                </li>
+            </ul>
+            <p>These rules are applied simultaneously to all cells to compute the next generation. The patterns that emerge can be surprisingly complex and life-like, demonstrating how simple rules can lead to intricate behavior.</p>
+            <p>In this interactive version, you can click to "seed" the grid by toggling cells, then observe the evolution!</p>
+        </div>
+    </div>
 
     <div class="container">
         <header class="cv-header">
@@ -297,7 +457,7 @@
             </section>
         </main>
         <footer>
-            <p>&copy; <span id="currentYear"></span> Sven Leutenegger. Interactive CV Experience.</p>
+            <p>© <span id="currentYear"></span> Sven Leutenegger. Interactive CV Experience.</p>
             <p class="easter-egg" id="easterEggTrigger">Engage with the cellular automata...</p>
         </footer>
     </div>
@@ -309,9 +469,14 @@
             const ctx = conwayCanvasEl.getContext('2d');
             const containerEl = document.querySelector('.container');
             const interactiveModeHelpEl = document.getElementById('interactiveModeHelp');
-            const golRulesDisplayEl = document.getElementById('golRulesDisplay');
+            const golRulesDisplayEl = document.getElementById('golRulesDisplay'); // This is the button container
             const easterEggTriggerEl = document.getElementById('easterEggTrigger');
             
+            // NEW: Popup elements
+            const golExplainButtonEl = document.getElementById('golExplainButton');
+            const golExplanationPopupEl = document.getElementById('golExplanationPopup');
+            const closeGolPopupEl = document.getElementById('closeGolPopup');
+
             let resolution = 12;
             let cols, rows;
             let grid, nextGrid, nameTemplateGrid, loadingBarTemplateGrid;
@@ -405,7 +570,7 @@
 
             function conwayGameLoop(timestamp) {
                 if (!isGameOfLifeRunning && currentConwayPhase !== 'nameReveal' && currentConwayPhase !== 'loadingIndicator') {
-                    if (currentConwayPhase === 'interactive' && isSimulationPausedInInteractive) { }
+                    if (currentConwayPhase === 'interactive' && isSimulationPausedInInteractive) { /* Do nothing, draw is handled on interaction */ }
                     conwayAnimationFrameId = requestAnimationFrame(conwayGameLoop);
                     return; 
                 }
@@ -445,6 +610,29 @@
                 conwayAnimationFrameId = requestAnimationFrame(conwayGameLoop);
             }
             
+            // NEW: Functions to show/hide GOL explanation popup
+            function showGolPopup() {
+                golExplanationPopupEl.style.display = 'flex';
+                // Delay adding class to allow display change to apply for transition
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => { // Ensures display:flex is rendered
+                        golExplanationPopupEl.classList.add('visible');
+                    });
+                });
+            }
+
+            function hideGolPopup() {
+                golExplanationPopupEl.classList.remove('visible');
+                // Wait for opacity transition to finish before setting display: none
+                const handleTransitionEnd = (event) => {
+                    if (event.propertyName === 'opacity' && event.target === golExplanationPopupEl) {
+                        golExplanationPopupEl.style.display = 'none';
+                        golExplanationPopupEl.removeEventListener('transitionend', handleTransitionEnd);
+                    }
+                };
+                golExplanationPopupEl.addEventListener('transitionend', handleTransitionEnd);
+            }
+
             function toggleInteractiveMode() { 
                 isInteractiveMode = !isInteractiveMode; 
                 isSimulationPausedInInteractive = false; 
@@ -455,7 +643,7 @@
                     conwayCanvasEl.style.opacity = '1'; conwayCanvasEl.style.zIndex = '5'; conwayCanvasEl.style.pointerEvents = 'auto'; 
                     document.body.style.backgroundColor = 'var(--background-color)'; 
                     interactiveModeHelpEl.style.opacity = '1'; interactiveModeHelpEl.style.pointerEvents = 'auto';
-                    golRulesDisplayEl.style.opacity = '1'; golRulesDisplayEl.style.pointerEvents = 'auto';
+                    golRulesDisplayEl.style.opacity = '1'; golRulesDisplayEl.style.pointerEvents = 'auto'; // Show button container
                     conwayCanvasEl.addEventListener('mousedown', handleCanvasMouseDown);
                     conwayCanvasEl.addEventListener('mousemove', handleCanvasMouseMove);
                     window.addEventListener('mouseup', handleCanvasMouseUp); 
@@ -466,7 +654,10 @@
                     conwayCanvasEl.style.opacity = '1'; 
                     conwayCanvasEl.style.zIndex = '-1'; conwayCanvasEl.style.pointerEvents = 'none'; 
                     interactiveModeHelpEl.style.opacity = '0'; interactiveModeHelpEl.style.pointerEvents = 'none'; 
-                    golRulesDisplayEl.style.opacity = '0'; golRulesDisplayEl.style.pointerEvents = 'none';
+                    golRulesDisplayEl.style.opacity = '0'; golRulesDisplayEl.style.pointerEvents = 'none'; // Hide button container
+                    if (golExplanationPopupEl.classList.contains('visible')) { // Hide popup if open
+                        hideGolPopup();
+                    }
                     conwayCanvasEl.removeEventListener('mousedown', handleCanvasMouseDown);
                     conwayCanvasEl.removeEventListener('mousemove', handleCanvasMouseMove);
                     window.removeEventListener('mouseup', handleCanvasMouseUp);
@@ -524,8 +715,13 @@
             function handleInteractiveKeys(event) { 
                 if (isInteractiveMode) {
                     if (event.key === 'Escape') { 
-                        toggleInteractiveMode(); 
+                        if (golExplanationPopupEl.classList.contains('visible')) {
+                            hideGolPopup(); // Close popup first if open
+                        } else {
+                            toggleInteractiveMode(); 
+                        }
                     } else if (event.key === 'p' || event.key === 'P') {
+                        if (golExplanationPopupEl.classList.contains('visible')) return; // Don't pause/play if popup is open
                         isSimulationPausedInInteractive = !isSimulationPausedInInteractive;
                         console.log(isSimulationPausedInInteractive ? "GoL Paused" : "GoL Playing");
                         if (!isSimulationPausedInInteractive) { 
@@ -551,6 +747,20 @@
             conwayAnimationFrameId = requestAnimationFrame(conwayGameLoop);
             easterEggTriggerEl.addEventListener('click', toggleInteractiveMode);
 
+            // NEW: Event listeners for the GOL explanation popup
+            golExplainButtonEl.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent click from propagating to canvas if button is over it
+                showGolPopup();
+            });
+            closeGolPopupEl.addEventListener('click', hideGolPopup);
+            golExplanationPopupEl.addEventListener('click', (event) => {
+                // Only hide if the click is on the overlay itself, not the content
+                if (event.target === golExplanationPopupEl) {
+                    hideGolPopup();
+                }
+            });
+
+
             document.getElementById('currentYear').textContent = new Date().getFullYear();
             function splitTextIntoChars(selector) { const element = document.querySelector(selector); if(element) {element.innerHTML = element.textContent.replace(/\S/g, "<span class='char'>$&</span>"); return element.querySelectorAll('.char');} return []; }
             
@@ -564,7 +774,7 @@
                 activeBurstGenerations = 0; 
                 conwayCanvasEl.style.opacity = '1';
             
-                await new Promise(resolve => setTimeout(resolve, 2000)); // 2-second GOL burst
+                await new Promise(resolve => setTimeout(resolve, 2000)); 
             
                 const mainTitleEl = document.querySelector('.cv-header h1');
                 const subTitleEl = document.querySelector('.cv-header .title');
